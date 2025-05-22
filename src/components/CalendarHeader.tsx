@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCalendar } from '../context/CalendarContext';
-import { getFormattedMonthYear } from '../utils/dateUtils';
+// import { getFormattedMonthYear } from '../utils/dateUtils';
 import { ChevronLeft, ChevronRight, Search, Calendar, Briefcase, User, Users, MoreHorizontal } from 'lucide-react';
 import { EventCategory } from '../types';
 

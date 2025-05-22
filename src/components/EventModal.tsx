@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCalendar } from '../context/CalendarContext';
 import { Event, RecurrencePattern, RecurrenceType, EventCategory } from '../types';
 import { X, Trash, Calendar, Clock, AlignLeft, Repeat, Circle, Briefcase, User, Users, MoreHorizontal } from 'lucide-react';
