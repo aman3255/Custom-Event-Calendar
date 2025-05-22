@@ -80,15 +80,16 @@ const EventModal: React.FC<EventModalProps> = ({
     return date.toISOString().slice(0, 16);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-
+  
     if (!title.trim()) {
       setErrorMessage('Please enter an event title');
       return;
     }
-
+  
+    // Your existing recurrence logic remains unchanged
     let recurrencePattern: RecurrencePattern | null = null;
     if (isRecurring) {
       recurrencePattern = {
@@ -99,7 +100,7 @@ const EventModal: React.FC<EventModalProps> = ({
         endDate: recurrenceType === 'custom' ? recurrenceEndDate || undefined : undefined,
       };
     }
-
+  
     const eventData: Event = {
       id: existingEvent?.id || crypto.randomUUID(),
       title,
@@ -111,20 +112,21 @@ const EventModal: React.FC<EventModalProps> = ({
       isRecurring,
       recurrence: recurrencePattern,
     };
-
+  
     let result;
     if (existingEvent) {
-      result = updateEvent(eventData);
+      result = await updateEvent(eventData);  // <-- await here
     } else {
-      result = addEvent(eventData);
+      result = await addEvent(eventData);     // <-- await here
     }
-
+  
     if (result.success) {
       onClose();
     } else {
       setErrorMessage(result.message || 'Error saving event');
     }
   };
+  
 
   const handleDelete = () => {
     if (existingEvent && confirm('Are you sure you want to delete this event?')) {
