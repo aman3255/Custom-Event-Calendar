@@ -84,10 +84,10 @@ const EventModal: React.FC<EventModalProps> = ({
     if (isRecurring) {
       recurrencePattern = {
         type: recurrenceType,
-        interval,
+        interval: recurrenceType === 'daily' ? 1 : interval,
         daysOfWeek: recurrenceType === 'weekly' ? daysOfWeek : undefined,
         dayOfMonth: recurrenceType === 'monthly' ? dayOfMonth : undefined,
-        endDate: recurrenceEndDate || undefined,
+        endDate: recurrenceType === 'daily' ? undefined : recurrenceEndDate || undefined,
       };
     }
 
@@ -286,31 +286,31 @@ const EventModal: React.FC<EventModalProps> = ({
                   </select>
                 </div>
 
-                {/* Interval */}
-                <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Every
-                  </label>
-                  <div className="flex items-center">
-                    <input
-                      type="number"
-                      min="1"
-                      max="99"
-                      value={interval}
-                      onChange={(e) => setInterval(parseInt(e.target.value))}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-600">
-                      {recurrenceType === 'daily'
-                        ? 'days'
-                        : recurrenceType === 'weekly'
-                        ? 'weeks'
-                        : recurrenceType === 'monthly'
-                        ? 'months'
-                        : 'days'}
-                    </span>
+                {/* Interval - Hidden for daily recurrence */}
+                {recurrenceType !== 'daily' && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Every
+                    </label>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        value={interval}
+                        onChange={(e) => setInterval(parseInt(e.target.value))}
+                        className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-600">
+                        {recurrenceType === 'weekly'
+                          ? 'weeks'
+                          : recurrenceType === 'monthly'
+                          ? 'months'
+                          : 'days'}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Days of week for weekly recurrence */}
                 {recurrenceType === 'weekly' && (
@@ -354,23 +354,25 @@ const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 )}
 
-                {/* End date */}
-                <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ends
-                  </label>
-                  <input
-                    type="date"
-                    value={recurrenceEndDate ? recurrenceEndDate.split('T')[0] : ''}
-                    onChange={(e) => {
-                      const date = e.target.value
-                        ? new Date(e.target.value).toISOString()
-                        : '';
-                      setRecurrenceEndDate(date);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                {/* End date - Hidden for daily recurrence */}
+                {recurrenceType !== 'daily' && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ends
+                    </label>
+                    <input
+                      type="date"
+                      value={recurrenceEndDate ? recurrenceEndDate.split('T')[0] : ''}
+                      onChange={(e) => {
+                        const date = e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : '';
+                        setRecurrenceEndDate(date);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
