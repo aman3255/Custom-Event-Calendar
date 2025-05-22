@@ -1,22 +1,6 @@
 import React, { useState } from 'react';
 import { useCalendar } from '../context/CalendarContext';
-// import { getFormattedMonthYear } from '../utils/dateUtils';
-import { ChevronLeft, ChevronRight, Search, Calendar, Briefcase, User, Users, MoreHorizontal } from 'lucide-react';
-import { EventCategory } from '../types';
-
-const CATEGORY_ICONS = {
-  work: <Briefcase className="h-4 w-4" />,
-  personal: <User className="h-4 w-4" />,
-  meeting: <Users className="h-4 w-4" />,
-  other: <MoreHorizontal className="h-4 w-4" />,
-};
-
-const CATEGORY_LABELS = {
-  work: 'Work',
-  personal: 'Personal',
-  meeting: 'Meeting',
-  other: 'Other',
-};
+import { ChevronLeft, ChevronRight, Search, Calendar } from 'lucide-react';
 
 const CalendarHeader: React.FC = () => {
   const {
@@ -27,8 +11,6 @@ const CalendarHeader: React.FC = () => {
     goToToday,
     searchTerm,
     setSearchTerm,
-    selectedCategories,
-    toggleCategory,
     setCurrentMonth,
     setCurrentYear,
   } = useCalendar();
@@ -143,24 +125,7 @@ const CalendarHeader: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-          <div className="flex items-center space-x-2">
-            {(Object.keys(CATEGORY_ICONS) as EventCategory[]).map((category) => (
-              <button
-                key={category}
-                onClick={() => toggleCategory(category)}
-                className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategories.includes(category)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {CATEGORY_ICONS[category]}
-                <span className="ml-1">{CATEGORY_LABELS[category]}</span>
-              </button>
-            ))}
-          </div>
-          
+        <div className="flex justify-end">
           <div className="relative w-full md:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
