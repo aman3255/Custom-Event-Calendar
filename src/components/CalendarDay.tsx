@@ -54,7 +54,15 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ day }) => {
   return (
     <div className={dayClasses} onClick={handleDayClick}>
       {/* Date number */}
-      <div className={`text-right text-sm mb-1 ${day.isToday ? 'font-bold text-blue-600' : ''}`}>
+      <div 
+        className={`
+          text-right mb-1 
+          ${day.isToday 
+            ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center ml-auto font-bold shadow-md' 
+            : 'text-sm'
+          }
+        `}
+      >
         {dateNumber}
       </div>
 
