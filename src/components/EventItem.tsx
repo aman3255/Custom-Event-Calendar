@@ -26,7 +26,7 @@ const EventItem: React.FC<EventItemProps> = ({ event, index, onClick }) => {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`px-2 py-1 text-xs rounded-md cursor-pointer truncate flex items-center group ${
+          className={`px-1.5 md:px-2 py-0.5 md:py-1 text-xs rounded-md cursor-pointer truncate flex items-center group ${
             snapshot.isDragging ? 'shadow-lg' : ''
           }`}
           style={{
@@ -37,13 +37,14 @@ const EventItem: React.FC<EventItemProps> = ({ event, index, onClick }) => {
           onClick={onClick}
         >
           <div className="truncate flex-1">
-            <span className="font-medium">{formatEventTime(event.startDate)}</span>
+            <span className="font-medium hidden md:inline">{formatEventTime(event.startDate)}</span>
+            <span className="md:hidden">{formatEventTime(event.startDate)}</span>
             {' '}
             {event.title}
           </div>
           
           {event.isRecurring && (
-            <Repeat className="h-3 w-3 ml-1 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Repeat className="h-3 w-3 ml-1 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
           )}
         </div>
       )}

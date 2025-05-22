@@ -26,7 +26,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ day, index }) => {
   };
 
   const dayClasses = `
-    min-h-24 p-1 border border-gray-200 relative
+    min-h-[100px] md:min-h-24 p-1 border border-gray-200 relative
     ${day.isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'}
     ${day.isToday ? 'bg-blue-50' : ''}
     hover:bg-gray-50 transition-colors duration-150
@@ -65,7 +65,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ day, index }) => {
             className={`
               text-right mb-1 
               ${day.isToday 
-                ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center ml-auto font-bold shadow-md' 
+                ? 'bg-blue-600 text-white w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center ml-auto font-bold shadow-md text-sm md:text-base' 
                 : 'text-sm'
               }
             `}
@@ -73,7 +73,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ day, index }) => {
             {dateNumber}
           </div>
 
-          <div className="space-y-1 overflow-y-auto max-h-20">
+          <div className="space-y-1 overflow-y-auto max-h-16 md:max-h-20">
             {day.events.map((event, eventIndex) => (
               <EventItem
                 key={event.id}
@@ -84,9 +84,9 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ day, index }) => {
             ))}
             {provided.placeholder}
             
-            {day.events.length > 3 && (
+            {day.events.length > 2 && (
               <div className="text-xs text-gray-500 pl-1">
-                +{day.events.length - 3} more
+                +{day.events.length - 2} more
               </div>
             )}
           </div>
