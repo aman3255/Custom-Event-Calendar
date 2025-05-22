@@ -20,6 +20,9 @@ interface CalendarContextType {
   selectedCategories: EventCategory[];
   toggleCategory: (category: EventCategory) => void;
   filteredEvents: Event[];
+  clearAllEvents: () => void;
+  exportEvents: () => string;
+  importEvents: (jsonData: string) => { success: boolean; message?: string };
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(undefined);
@@ -27,6 +30,9 @@ const CalendarContext = createContext<CalendarContextType | undefined>(undefined
 interface CalendarProviderProps {
   children: ReactNode;
 }
+
+const STORAGE_KEY = 'calendarEvents';
+const LAST_SYNC_KEY = 'lastEventSync';
 
 export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) => {
   const today = new Date();
@@ -36,20 +42,55 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>([]);
 
+  // Load events from localStorage on initial mount
   useEffect(() => {
-    const savedEvents = localStorage.getItem('calendarEvents');
-    if (savedEvents) {
-      try {
-        setEvents(JSON.parse(savedEvents));
-      } catch (error) {
-        console.error('Error parsing saved events:', error);
+    try {
+      const savedEvents = localStorage.getItem(STORAGE_KEY);
+      if (savedEvents) {
+        const parsedEvents = JSON.parse(savedEvents);
+        // Validate the data structure
+        if (Array.isArray(parsedEvents) && parsedEvents.every(isValidEvent)) {
+          setEvents(parsedEvents);
+        } else {
+          console.error('Invalid event data structure in localStorage');
+          localStorage.removeItem(STORAGE_KEY);
+        }
       }
+    } catch (error) {
+      console.error('Error loading events from localStorage:', error);
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
+  // Save events to localStorage with debounce
   useEffect(() => {
-    localStorage.setItem('calendarEvents', JSON.stringify(events));
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+        localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
+      } catch (error) {
+        console.error('Error saving events to localStorage:', error);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
   }, [events]);
+
+  // Validate event object structure
+  const isValidEvent = (event: any): event is Event => {
+    return (
+      typeof event === 'object' &&
+      typeof event.id === 'string' &&
+      typeof event.title === 'string' &&
+      typeof event.startDate === 'string' &&
+      typeof event.endDate === 'string' &&
+      typeof event.description === 'string' &&
+      typeof event.color === 'string' &&
+      typeof event.category === 'string' &&
+      typeof event.isRecurring === 'boolean' &&
+      (event.recurrence === null || typeof event.recurrence === 'object')
+    );
+  };
 
   const nextMonth = () => {
     if (currentMonth === 11) {
@@ -82,7 +123,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
       };
     }
 
-    setEvents([...events, event]);
+    setEvents(prevEvents => [...prevEvents, event]);
     return { success: true };
   };
 
@@ -94,12 +135,12 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
       };
     }
 
-    setEvents(events.map(e => (e.id === event.id ? event : e)));
+    setEvents(prevEvents => prevEvents.map(e => (e.id === event.id ? event : e)));
     return { success: true };
   };
 
   const deleteEvent = (eventId: string) => {
-    setEvents(events.filter(event => event.id !== eventId));
+    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
   };
 
   const moveEvent = (
@@ -145,9 +186,9 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     }
 
     if (eventToMove.isRecurring && !moveEntireSeries) {
-      setEvents([...events, updatedEvent]);
+      setEvents(prevEvents => [...prevEvents, updatedEvent]);
     } else {
-      setEvents(events.map(e => (e.id === eventId ? updatedEvent : e)));
+      setEvents(prevEvents => prevEvents.map(e => (e.id === eventId ? updatedEvent : e)));
     }
 
     return { success: true };
@@ -159,6 +200,29 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
+  };
+
+  const clearAllEvents = () => {
+    if (window.confirm('Are you sure you want to delete all events? This action cannot be undone.')) {
+      setEvents([]);
+    }
+  };
+
+  const exportEvents = () => {
+    return JSON.stringify(events, null, 2);
+  };
+
+  const importEvents = (jsonData: string): { success: boolean; message?: string } => {
+    try {
+      const newEvents = JSON.parse(jsonData);
+      if (!Array.isArray(newEvents) || !newEvents.every(isValidEvent)) {
+        return { success: false, message: 'Invalid event data format' };
+      }
+      setEvents(newEvents);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: 'Error importing events: Invalid JSON data' };
+    }
   };
 
   const filteredEvents = events.filter(event => {
@@ -192,6 +256,9 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
         selectedCategories,
         toggleCategory,
         filteredEvents,
+        clearAllEvents,
+        exportEvents,
+        importEvents,
       }}
     >
       {children}
