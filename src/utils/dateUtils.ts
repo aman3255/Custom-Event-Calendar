@@ -219,12 +219,26 @@ export const getEventsForDate = (date: Date, events: Event[]): Event[] => {
   return events.filter(event => doesEventOccurOnDate(event, date));
 };
 
-// Check if two events overlap
+// Check if two events overlap in time
 export const doEventsOverlap = (event1: Event, event2: Event): boolean => {
   const event1Start = new Date(event1.startDate);
   const event1End = new Date(event1.endDate);
   const event2Start = new Date(event2.startDate);
   const event2End = new Date(event2.endDate);
+
+  // Check if events are on the same day
+  const isSameDay = (date1: Date, date2: Date) => {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  };
+
+  // If events are not on the same day, they don't overlap
+  if (!isSameDay(event1Start, event2Start)) {
+    return false;
+  }
   
   return (
     (event1Start <= event2End && event1End >= event2Start) ||
@@ -232,17 +246,37 @@ export const doEventsOverlap = (event1: Event, event2: Event): boolean => {
   );
 };
 
-// Check if an event conflicts with any existing events
+// Check if an event conflicts with any existing events, including recurring events
 export const hasEventConflict = (
   event: Event,
   events: Event[],
   excludeEventId?: string
 ): boolean => {
-  return events.some(
-    existingEvent =>
-      existingEvent.id !== excludeEventId &&
-      doEventsOverlap(event, existingEvent)
-  );
+  // Get the date range for checking conflicts
+  const startDate = new Date(event.startDate);
+  const endDate = new Date(event.endDate);
+
+  // Check each existing event for conflicts
+  return events.some(existingEvent => {
+    // Skip the event being edited
+    if (existingEvent.id === excludeEventId) {
+      return false;
+    }
+
+    // For recurring events, check if any instance conflicts
+    if (existingEvent.isRecurring && existingEvent.recurrence) {
+      // Check dates within the range
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        if (doesEventOccurOnDate(existingEvent, date) && doEventsOverlap(event, existingEvent)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // For non-recurring events, simple overlap check
+    return doEventsOverlap(event, existingEvent);
+  });
 };
 
 // Generate a date string in ISO format for a specific date and time
