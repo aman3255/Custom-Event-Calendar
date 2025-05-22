@@ -7,6 +7,7 @@ interface CalendarContextType {
   addEvent: (event: Event) => { success: boolean; message?: string };
   updateEvent: (event: Event) => { success: boolean; message?: string };
   deleteEvent: (eventId: string) => void;
+  moveEvent: (eventId: string, newDate: Date, moveEntireSeries: boolean) => { success: boolean; message?: string };
   currentMonth: number;
   currentYear: number;
   setCurrentMonth: (month: number) => void;
@@ -32,7 +33,6 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Load events from local storage on initial mount
   useEffect(() => {
     const savedEvents = localStorage.getItem('calendarEvents');
     if (savedEvents) {
@@ -44,12 +44,10 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Save events to local storage whenever they change
   useEffect(() => {
     localStorage.setItem('calendarEvents', JSON.stringify(events));
   }, [events]);
 
-  // Move to the next month, handling year change
   const nextMonth = () => {
     if (currentMonth === 11) {
       setCurrentMonth(0);
@@ -59,7 +57,6 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     }
   };
 
-  // Move to the previous month, handling year change
   const prevMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11);
@@ -69,15 +66,12 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     }
   };
 
-  // Go to today's date
   const goToToday = () => {
     setCurrentMonth(today.getMonth());
     setCurrentYear(today.getFullYear());
   };
 
-  // Add a new event
   const addEvent = (event: Event): { success: boolean; message?: string } => {
-    // Check for conflicts with existing events
     if (hasEventConflict(event, events)) {
       return {
         success: false,
@@ -89,9 +83,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     return { success: true };
   };
 
-  // Update an existing event
   const updateEvent = (event: Event): { success: boolean; message?: string } => {
-    // Check for conflicts with other events (excluding the current event)
     if (hasEventConflict(event, events, event.id)) {
       return {
         success: false,
@@ -103,12 +95,61 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     return { success: true };
   };
 
-  // Delete an event
   const deleteEvent = (eventId: string) => {
     setEvents(events.filter(event => event.id !== eventId));
   };
 
-  // Filter events based on search term
+  const moveEvent = (
+    eventId: string,
+    newDate: Date,
+    moveEntireSeries: boolean
+  ): { success: boolean; message?: string } => {
+    const eventToMove = events.find(e => e.id === eventId);
+    if (!eventToMove) return { success: false, message: 'Event not found' };
+
+    const startDate = new Date(eventToMove.startDate);
+    const endDate = new Date(eventToMove.endDate);
+    const timeDiff = endDate.getTime() - startDate.getTime();
+
+    const newStartDate = new Date(newDate);
+    newStartDate.setHours(startDate.getHours());
+    newStartDate.setMinutes(startDate.getMinutes());
+
+    const newEndDate = new Date(newStartDate.getTime() + timeDiff);
+
+    const updatedEvent: Event = {
+      ...eventToMove,
+      startDate: newStartDate.toISOString(),
+      endDate: newEndDate.toISOString(),
+    };
+
+    if (moveEntireSeries && eventToMove.isRecurring) {
+      updatedEvent.recurrence = {
+        ...eventToMove.recurrence!,
+        type: eventToMove.recurrence!.type,
+      };
+    } else if (eventToMove.isRecurring) {
+      updatedEvent.isRecurring = false;
+      updatedEvent.recurrence = null;
+      updatedEvent.id = crypto.randomUUID(); // Create new instance
+    }
+
+    if (hasEventConflict(updatedEvent, events, eventToMove.id)) {
+      return {
+        success: false,
+        message: 'This move would conflict with an existing event.',
+      };
+    }
+
+    if (eventToMove.isRecurring && !moveEntireSeries) {
+      setEvents([...events, updatedEvent]);
+    } else {
+      setEvents(events.map(e => (e.id === eventId ? updatedEvent : e)));
+    }
+
+    return { success: true };
+  };
+
   const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -121,6 +162,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
         addEvent,
         updateEvent,
         deleteEvent,
+        moveEvent,
         currentMonth,
         currentYear,
         setCurrentMonth,
@@ -138,7 +180,6 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
   );
 };
 
-// Custom hook to use the calendar context
 export const useCalendar = (): CalendarContextType => {
   const context = useContext(CalendarContext);
   if (context === undefined) {
