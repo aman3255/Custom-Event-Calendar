@@ -44,11 +44,11 @@ const EventModal: React.FC<EventModalProps> = ({
   initialValues,
 }) => {
   const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
-  
-  const existingEvent = eventId 
-    ? events.find(event => event.id === eventId) 
+
+  const existingEvent = eventId
+    ? events.find(event => event.id === eventId)
     : null;
-  
+
   const [title, setTitle] = useState(existingEvent?.title || '');
   const [startDate, setStartDate] = useState(
     existingEvent?.startDate || initialValues?.startDate || new Date().toISOString()
@@ -75,20 +75,65 @@ const EventModal: React.FC<EventModalProps> = ({
   );
   const [errorMessage, setErrorMessage] = useState('');
 
+  const handleDateTimeChange = (type: 'start' | 'end', value: string) => {
+    try {
+      const newDate = new Date(value);
+      if (isNaN(newDate.getTime())) return; // Invalid date
+
+      if (type === 'start') {
+        const currentStart = new Date(startDate);
+        const currentEnd = new Date(endDate);
+        const duration = currentEnd.getTime() - currentStart.getTime();
+
+        setStartDate(newDate.toISOString());
+
+        // Maintain the same duration when updating start time
+        const newEndDate = new Date(newDate.getTime() + duration);
+        setEndDate(newEndDate.toISOString());
+      } else {
+        const startDateTime = new Date(startDate);
+        if (newDate > startDateTime) {
+          setEndDate(newDate.toISOString());
+        } else {
+          // If end time is before start time, set it to start time + 1 hour
+          const adjustedEnd = new Date(startDateTime);
+          adjustedEnd.setHours(adjustedEnd.getHours() + 1);
+          setEndDate(adjustedEnd.toISOString());
+        }
+      }
+    } catch (error) {
+      console.error('Error handling date/time change:', error);
+    }
+  };
+
   const formatDateForInput = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+
+      // Format date to YYYY-MM-DDThh:mm
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-  
+
     if (!title.trim()) {
       setErrorMessage('Please enter an event title');
       return;
     }
-  
+
     // Your existing recurrence logic remains unchanged
     let recurrencePattern: RecurrencePattern | null = null;
     if (isRecurring) {
@@ -100,7 +145,7 @@ const EventModal: React.FC<EventModalProps> = ({
         endDate: recurrenceType === 'custom' ? recurrenceEndDate || undefined : undefined,
       };
     }
-  
+
     const eventData: Event = {
       id: existingEvent?.id || crypto.randomUUID(),
       title,
@@ -112,21 +157,21 @@ const EventModal: React.FC<EventModalProps> = ({
       isRecurring,
       recurrence: recurrencePattern,
     };
-  
+
     let result;
     if (existingEvent) {
       result = await updateEvent(eventData);  // <-- await here
     } else {
       result = await addEvent(eventData);     // <-- await here
     }
-  
+
     if (result.success) {
       onClose();
     } else {
       setErrorMessage(result.message || 'Error saving event');
     }
   };
-  
+
 
   const handleDelete = () => {
     if (existingEvent && confirm('Are you sure you want to delete this event?')) {
@@ -195,11 +240,10 @@ const EventModal: React.FC<EventModalProps> = ({
                   key={cat}
                   type="button"
                   onClick={() => setCategory(cat)}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    category === cat
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${category === cat
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {CATEGORY_ICONS[cat]}
                   <span className="ml-2">{CATEGORY_LABELS[cat]}</span>
@@ -217,7 +261,7 @@ const EventModal: React.FC<EventModalProps> = ({
               <input
                 type="datetime-local"
                 value={formatDateForInput(startDate)}
-                onChange={(e) => setStartDate(new Date(e.target.value).toISOString())}
+                onChange={(e) => handleDateTimeChange('start', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -229,7 +273,7 @@ const EventModal: React.FC<EventModalProps> = ({
               <input
                 type="datetime-local"
                 value={formatDateForInput(endDate)}
-                onChange={(e) => setEndDate(new Date(e.target.value).toISOString())}
+                onChange={(e) => handleDateTimeChange('end', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -259,11 +303,10 @@ const EventModal: React.FC<EventModalProps> = ({
                 <button
                   key={eventColor}
                   type="button"
-                  className={`w-8 h-8 rounded-full border-2 ${
-                    color === eventColor
+                  className={`w-8 h-8 rounded-full border-2 ${color === eventColor
                       ? 'border-gray-800'
                       : 'border-transparent'
-                  }`}
+                    }`}
                   style={{ backgroundColor: eventColor }}
                   onClick={() => setColor(eventColor)}
                   aria-label={`Select ${eventColor} color`}
@@ -334,11 +377,10 @@ const EventModal: React.FC<EventModalProps> = ({
                         <button
                           key={index}
                           type="button"
-                          className={`w-8 h-8 rounded-full text-sm font-medium ${
-                            daysOfWeek.includes(index)
+                          className={`w-8 h-8 rounded-full text-sm font-medium ${daysOfWeek.includes(index)
                               ? 'bg-blue-500 text-white'
                               : 'bg-gray-100 text-gray-700'
-                          }`}
+                            }`}
                           onClick={() => toggleDayOfWeek(index)}
                         >
                           {day}
