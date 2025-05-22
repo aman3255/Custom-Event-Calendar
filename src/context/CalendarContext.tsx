@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Event, RecurrencePattern } from '../types';
+import { Event, EventCategory } from '../types';
 import { hasEventConflict } from '../utils/dateUtils';
 
 interface CalendarContextType {
@@ -17,6 +17,8 @@ interface CalendarContextType {
   goToToday: () => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  selectedCategories: EventCategory[];
+  toggleCategory: (category: EventCategory) => void;
   filteredEvents: Event[];
 }
 
@@ -32,6 +34,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
   const [currentMonth, setCurrentMonth] = useState<number>(today.getMonth());
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>([]);
 
   useEffect(() => {
     const savedEvents = localStorage.getItem('calendarEvents');
@@ -131,7 +134,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     } else if (eventToMove.isRecurring) {
       updatedEvent.isRecurring = false;
       updatedEvent.recurrence = null;
-      updatedEvent.id = crypto.randomUUID(); // Create new instance
+      updatedEvent.id = crypto.randomUUID();
     }
 
     if (hasEventConflict(updatedEvent, events, eventToMove.id)) {
@@ -150,10 +153,24 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     return { success: true };
   };
 
-  const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleCategory = (category: EventCategory) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = searchTerm === '' ||
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory = selectedCategories.length === 0 ||
+      selectedCategories.includes(event.category);
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <CalendarContext.Provider
@@ -172,6 +189,8 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
         goToToday,
         searchTerm,
         setSearchTerm,
+        selectedCategories,
+        toggleCategory,
         filteredEvents,
       }}
     >

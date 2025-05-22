@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
 import { useCalendar } from '../context/CalendarContext';
 import { getFormattedMonthYear } from '../utils/dateUtils';
-import { ChevronLeft, ChevronRight, Search, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Calendar, Briefcase, User, Users, MoreHorizontal } from 'lucide-react';
+import { EventCategory } from '../types';
+
+const CATEGORY_ICONS = {
+  work: <Briefcase className="h-4 w-4" />,
+  personal: <User className="h-4 w-4" />,
+  meeting: <Users className="h-4 w-4" />,
+  other: <MoreHorizontal className="h-4 w-4" />,
+};
+
+const CATEGORY_LABELS = {
+  work: 'Work',
+  personal: 'Personal',
+  meeting: 'Meeting',
+  other: 'Other',
+};
 
 const CalendarHeader: React.FC = () => {
   const {
@@ -12,6 +27,8 @@ const CalendarHeader: React.FC = () => {
     goToToday,
     searchTerm,
     setSearchTerm,
+    selectedCategories,
+    toggleCategory,
     setCurrentMonth,
     setCurrentYear,
   } = useCalendar();
@@ -24,7 +41,6 @@ const CalendarHeader: React.FC = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Generate array of years (10 years before and after current year)
   const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
 
   const handleMonthClick = (monthIndex: number) => {
@@ -39,105 +55,124 @@ const CalendarHeader: React.FC = () => {
 
   return (
     <header className="bg-white shadow-sm p-4 mb-4 rounded-lg">
-      <div className="flex flex-col md:flex-row items-center justify-between">
-        <div className="flex items-center mb-4 md:mb-0">
-          <Calendar className="h-8 w-8 text-blue-600 mr-3" />
-          <h1 className="text-2xl font-bold text-gray-800">Event Calendar</h1>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={goToToday}
-            className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors"
-          >
-            Today
-          </button>
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between">
+          <div className="flex items-center mb-4 md:mb-0">
+            <Calendar className="h-8 w-8 text-blue-600 mr-3" />
+            <h1 className="text-2xl font-bold text-gray-800">Event Calendar</h1>
+          </div>
           
-          <button
-            onClick={prevMonth}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
-          </button>
-          
-          <div className="relative">
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => {
-                  setShowMonthDropdown(!showMonthDropdown);
-                  setShowYearDropdown(false);
-                }}
-                className="text-xl font-semibold text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-              >
-                {months[currentMonth]}
-              </button>
-              <button
-                onClick={() => {
-                  setShowYearDropdown(!showYearDropdown);
-                  setShowMonthDropdown(false);
-                }}
-                className="text-xl font-semibold text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-              >
-                {currentYear}
-              </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={goToToday}
+              className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors"
+            >
+              Today
+            </button>
+            
+            <button
+              onClick={prevMonth}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
+            </button>
+            
+            <div className="relative">
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => {
+                    setShowMonthDropdown(!showMonthDropdown);
+                    setShowYearDropdown(false);
+                  }}
+                  className="text-xl font-semibold text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+                >
+                  {months[currentMonth]}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowYearDropdown(!showYearDropdown);
+                    setShowMonthDropdown(false);
+                  }}
+                  className="text-xl font-semibold text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+                >
+                  {currentYear}
+                </button>
+              </div>
+
+              {showMonthDropdown && (
+                <div className="absolute z-10 mt-1 w-40 bg-white rounded-md shadow-lg py-1 max-h-60 overflow-auto">
+                  {months.map((month, index) => (
+                    <button
+                      key={month}
+                      onClick={() => handleMonthClick(index)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                        currentMonth === index ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
+                      }`}
+                    >
+                      {month}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showYearDropdown && (
+                <div className="absolute z-10 mt-1 w-24 bg-white rounded-md shadow-lg py-1 max-h-60 overflow-auto">
+                  {years.map((year) => (
+                    <button
+                      key={year}
+                      onClick={() => handleYearClick(year)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                        currentYear === year ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
+                      }`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+            
+            <button
+              onClick={nextMonth}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Next month"
+            >
+              <ChevronRight className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
 
-            {/* Month Dropdown */}
-            {showMonthDropdown && (
-              <div className="absolute z-10 mt-1 w-40 bg-white rounded-md shadow-lg py-1 max-h-60 overflow-auto">
-                {months.map((month, index) => (
-                  <button
-                    key={month}
-                    onClick={() => handleMonthClick(index)}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
-                      currentMonth === index ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
-                    }`}
-                  >
-                    {month}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Year Dropdown */}
-            {showYearDropdown && (
-              <div className="absolute z-10 mt-1 w-24 bg-white rounded-md shadow-lg py-1 max-h-60 overflow-auto">
-                {years.map((year) => (
-                  <button
-                    key={year}
-                    onClick={() => handleYearClick(year)}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
-                      currentYear === year ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
-                    }`}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-            )}
+        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+          <div className="flex items-center space-x-2">
+            {(Object.keys(CATEGORY_ICONS) as EventCategory[]).map((category) => (
+              <button
+                key={category}
+                onClick={() => toggleCategory(category)}
+                className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategories.includes(category)
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {CATEGORY_ICONS[category]}
+                <span className="ml-1">{CATEGORY_LABELS[category]}</span>
+              </button>
+            ))}
           </div>
           
-          <button
-            onClick={nextMonth}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Next month"
-          >
-            <ChevronRight className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
-        
-        <div className="relative mt-4 md:mt-0 w-full md:w-auto">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+          <div className="relative w-full md:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search events..."
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search events..."
-            className="pl-10 pr-4 py-2 w-full md:w-64 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
         </div>
       </div>
     </header>

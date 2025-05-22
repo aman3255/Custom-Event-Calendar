@@ -1,10 +1,11 @@
 export interface Event {
   id: string;
   title: string;
-  startDate: string; // ISO date string
-  endDate: string; // ISO date string
+  startDate: string; 
+  endDate: string; 
   description: string;
   color: string;
+  category: 'work' | 'personal' | 'meeting' | 'other';
   recurrence: RecurrencePattern | null;
   isRecurring: boolean;
 }
@@ -20,9 +21,11 @@ export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 export interface RecurrencePattern {
   type: RecurrenceType;
-  interval: number; // Every X days/weeks/months
-  daysOfWeek?: number[]; // 0-6, Sunday to Saturday (for weekly)
-  dayOfMonth?: number; // 1-31 (for monthly)
-  endDate?: string; // ISO date string
-  occurrences?: number; // Number of occurrences
+  interval: number; 
+  daysOfWeek?: number[]; 
+  dayOfMonth?: number; 
+  endDate?: string; 
+  occurrences?: number; 
 }
+
+export type EventCategory = 'work' | 'personal' | 'meeting' | 'other';

@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useCalendar } from '../context/CalendarContext';
-import { Event, RecurrencePattern, RecurrenceType } from '../types';
-import { X, Trash, Calendar, Clock, AlignLeft, Repeat, Circle } from 'lucide-react';
+import { Event, RecurrencePattern, RecurrenceType, EventCategory } from '../types';
+import { X, Trash, Calendar, Clock, AlignLeft, Repeat, Circle, Briefcase, User, Users, MoreHorizontal } from 'lucide-react';
+
+const CATEGORY_ICONS = {
+  work: <Briefcase className="h-4 w-4" />,
+  personal: <User className="h-4 w-4" />,
+  meeting: <Users className="h-4 w-4" />,
+  other: <MoreHorizontal className="h-4 w-4" />,
+};
+
+const CATEGORY_LABELS = {
+  work: 'Work',
+  personal: 'Personal',
+  meeting: 'Meeting',
+  other: 'Other',
+};
 
 interface EventModalProps {
   date: Date;
@@ -31,12 +45,10 @@ const EventModal: React.FC<EventModalProps> = ({
 }) => {
   const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
   
-  // Find the event if editing an existing one
   const existingEvent = eventId 
     ? events.find(event => event.id === eventId) 
     : null;
   
-  // Form state
   const [title, setTitle] = useState(existingEvent?.title || '');
   const [startDate, setStartDate] = useState(
     existingEvent?.startDate || initialValues?.startDate || new Date().toISOString()
@@ -46,6 +58,7 @@ const EventModal: React.FC<EventModalProps> = ({
   );
   const [description, setDescription] = useState(existingEvent?.description || '');
   const [color, setColor] = useState(existingEvent?.color || EVENT_COLORS[0]);
+  const [category, setCategory] = useState<EventCategory>(existingEvent?.category || 'other');
   const [isRecurring, setIsRecurring] = useState(existingEvent?.isRecurring || false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(
     existingEvent?.recurrence?.type || 'daily'
@@ -62,24 +75,20 @@ const EventModal: React.FC<EventModalProps> = ({
   );
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Format date for input fields
   const formatDateForInput = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toISOString().slice(0, 16); // Format: "YYYY-MM-DDThh:mm"
+    return date.toISOString().slice(0, 16);
   };
 
-  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
-    // Validate form
     if (!title.trim()) {
       setErrorMessage('Please enter an event title');
       return;
     }
 
-    // Create recurrence pattern if recurring
     let recurrencePattern: RecurrencePattern | null = null;
     if (isRecurring) {
       recurrencePattern = {
@@ -91,7 +100,6 @@ const EventModal: React.FC<EventModalProps> = ({
       };
     }
 
-    // Create event object
     const eventData: Event = {
       id: existingEvent?.id || crypto.randomUUID(),
       title,
@@ -99,11 +107,11 @@ const EventModal: React.FC<EventModalProps> = ({
       endDate,
       description,
       color,
+      category,
       isRecurring,
       recurrence: recurrencePattern,
     };
 
-    // Add or update the event
     let result;
     if (existingEvent) {
       result = updateEvent(eventData);
@@ -118,7 +126,6 @@ const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  // Handle event deletion
   const handleDelete = () => {
     if (existingEvent && confirm('Are you sure you want to delete this event?')) {
       deleteEvent(existingEvent.id);
@@ -126,7 +133,6 @@ const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  // Handle day of week toggle for weekly recurrence
   const toggleDayOfWeek = (day: number) => {
     if (daysOfWeek.includes(day)) {
       setDaysOfWeek(daysOfWeek.filter(d => d !== day));
@@ -144,7 +150,6 @@ const EventModal: React.FC<EventModalProps> = ({
         className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold text-gray-800">
             {existingEvent ? 'Edit Event' : 'New Event'}
@@ -157,16 +162,13 @@ const EventModal: React.FC<EventModalProps> = ({
           </button>
         </div>
 
-        {/* Modal body */}
         <form onSubmit={handleSubmit} className="p-4">
-          {/* Error message */}
           {errorMessage && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
               {errorMessage}
             </div>
           )}
 
-          {/* Event title */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Event Title
@@ -181,7 +183,29 @@ const EventModal: React.FC<EventModalProps> = ({
             />
           </div>
 
-          {/* Event date and time */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.keys(CATEGORY_ICONS) as EventCategory[]).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    category === cat
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {CATEGORY_ICONS[cat]}
+                  <span className="ml-2">{CATEGORY_LABELS[cat]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -209,7 +233,6 @@ const EventModal: React.FC<EventModalProps> = ({
             </div>
           </div>
 
-          {/* Event description */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
               <AlignLeft className="h-4 w-4 mr-1" />
@@ -224,7 +247,6 @@ const EventModal: React.FC<EventModalProps> = ({
             ></textarea>
           </div>
 
-          {/* Event color */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
               <Circle className="h-4 w-4 mr-1" />
@@ -248,7 +270,6 @@ const EventModal: React.FC<EventModalProps> = ({
             </div>
           </div>
 
-          {/* Recurrence options */}
           <div className="mb-4">
             <div className="flex items-center mb-2">
               <input
@@ -269,7 +290,6 @@ const EventModal: React.FC<EventModalProps> = ({
 
             {isRecurring && (
               <div className="pl-6 border-l-2 border-gray-200">
-                {/* Recurrence type */}
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Repeat
@@ -286,43 +306,22 @@ const EventModal: React.FC<EventModalProps> = ({
                   </select>
                 </div>
 
-                {/* Monthly recurrence options */}
                 {recurrenceType === 'monthly' && (
-                  <>
-                    <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Every
-                      </label>
-                      <div className="flex items-center">
-                        <input
-                          type="number"
-                          min="1"
-                          max="99"
-                          value={interval}
-                          onChange={(e) => setInterval(parseInt(e.target.value))}
-                          className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <span className="ml-2 text-sm text-gray-600">months</span>
-                      </div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        On day
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="31"
-                        value={dayOfMonth}
-                        onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      On day
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={dayOfMonth}
+                      onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 )}
 
-                {/* Days of week for weekly recurrence */}
                 {recurrenceType === 'weekly' && (
                   <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -347,7 +346,6 @@ const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 )}
 
-                {/* Custom recurrence options */}
                 {recurrenceType === 'custom' && (
                   <>
                     <div className="mb-3">
@@ -389,7 +387,6 @@ const EventModal: React.FC<EventModalProps> = ({
             )}
           </div>
 
-          {/* Modal footer */}
           <div className="flex justify-between pt-4 border-t">
             {existingEvent ? (
               <button
