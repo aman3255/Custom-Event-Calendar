@@ -62,18 +62,14 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Save events to localStorage with debounce
+  // Save events to localStorage immediately when they change
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-        localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
-      } catch (error) {
-        console.error('Error saving events to localStorage:', error);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
+    } catch (error) {
+      console.error('Error saving events to localStorage:', error);
+    }
   }, [events]);
 
   // Validate event object structure
@@ -140,7 +136,12 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
   };
 
   const deleteEvent = (eventId: string) => {
-    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+    setEvents(prevEvents => {
+      const updatedEvents = prevEvents.filter(event => event.id !== eventId);
+      // Immediately save to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedEvents));
+      return updatedEvents;
+    });
   };
 
   const moveEvent = (
@@ -205,6 +206,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
   const clearAllEvents = () => {
     if (window.confirm('Are you sure you want to delete all events? This action cannot be undone.')) {
       setEvents([]);
+      localStorage.setItem(STORAGE_KEY, '[]');
     }
   };
 
@@ -219,6 +221,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) 
         return { success: false, message: 'Invalid event data format' };
       }
       setEvents(newEvents);
+      localStorage.setItem(STORAGE_KEY, jsonData);
       return { success: true };
     } catch (error) {
       return { success: false, message: 'Error importing events: Invalid JSON data' };
