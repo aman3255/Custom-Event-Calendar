@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCalendar } from '../context/CalendarContext';
 import { getFormattedMonthYear } from '../utils/dateUtils';
 import { ChevronLeft, ChevronRight, Search, Calendar } from 'lucide-react';
@@ -12,7 +12,30 @@ const CalendarHeader: React.FC = () => {
     goToToday,
     searchTerm,
     setSearchTerm,
+    setCurrentMonth,
+    setCurrentYear,
   } = useCalendar();
+
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+  const [showYearDropdown, setShowYearDropdown] = useState(false);
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Generate array of years (10 years before and after current year)
+  const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
+
+  const handleMonthClick = (monthIndex: number) => {
+    setCurrentMonth(monthIndex);
+    setShowMonthDropdown(false);
+  };
+
+  const handleYearClick = (year: number) => {
+    setCurrentYear(year);
+    setShowYearDropdown(false);
+  };
 
   return (
     <header className="bg-white shadow-sm p-4 mb-4 rounded-lg">
@@ -38,9 +61,62 @@ const CalendarHeader: React.FC = () => {
             <ChevronLeft className="h-5 w-5 text-gray-600" />
           </button>
           
-          <h2 className="text-xl font-semibold text-gray-700 w-40 text-center">
-            {getFormattedMonthYear(currentYear, currentMonth)}
-          </h2>
+          <div className="relative">
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => {
+                  setShowMonthDropdown(!showMonthDropdown);
+                  setShowYearDropdown(false);
+                }}
+                className="text-xl font-semibold text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+              >
+                {months[currentMonth]}
+              </button>
+              <button
+                onClick={() => {
+                  setShowYearDropdown(!showYearDropdown);
+                  setShowMonthDropdown(false);
+                }}
+                className="text-xl font-semibold text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+              >
+                {currentYear}
+              </button>
+            </div>
+
+            {/* Month Dropdown */}
+            {showMonthDropdown && (
+              <div className="absolute z-10 mt-1 w-40 bg-white rounded-md shadow-lg py-1 max-h-60 overflow-auto">
+                {months.map((month, index) => (
+                  <button
+                    key={month}
+                    onClick={() => handleMonthClick(index)}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                      currentMonth === index ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    {month}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Year Dropdown */}
+            {showYearDropdown && (
+              <div className="absolute z-10 mt-1 w-24 bg-white rounded-md shadow-lg py-1 max-h-60 overflow-auto">
+                {years.map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => handleYearClick(year)}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                      currentYear === year ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           
           <button
             onClick={nextMonth}
