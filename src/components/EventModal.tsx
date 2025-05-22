@@ -87,7 +87,7 @@ const EventModal: React.FC<EventModalProps> = ({
         interval: recurrenceType === 'daily' ? 1 : interval,
         daysOfWeek: recurrenceType === 'weekly' ? daysOfWeek : undefined,
         dayOfMonth: recurrenceType === 'monthly' ? dayOfMonth : undefined,
-        endDate: recurrenceType === 'daily' ? undefined : recurrenceEndDate || undefined,
+        endDate: recurrenceType === 'daily' || recurrenceType === 'weekly' ? undefined : recurrenceEndDate || undefined,
       };
     }
 
@@ -286,8 +286,8 @@ const EventModal: React.FC<EventModalProps> = ({
                   </select>
                 </div>
 
-                {/* Interval - Hidden for daily recurrence */}
-                {recurrenceType !== 'daily' && (
+                {/* Interval - Hidden for daily and weekly recurrence */}
+                {recurrenceType !== 'daily' && recurrenceType !== 'weekly' && (
                   <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Every
@@ -302,9 +302,7 @@ const EventModal: React.FC<EventModalProps> = ({
                         className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-gray-600">
-                        {recurrenceType === 'weekly'
-                          ? 'weeks'
-                          : recurrenceType === 'monthly'
+                        {recurrenceType === 'monthly'
                           ? 'months'
                           : 'days'}
                       </span>
@@ -354,8 +352,8 @@ const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 )}
 
-                {/* End date - Hidden for daily recurrence */}
-                {recurrenceType !== 'daily' && (
+                {/* End date - Hidden for daily and weekly recurrence */}
+                {recurrenceType !== 'daily' && recurrenceType !== 'weekly' && (
                   <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Ends
